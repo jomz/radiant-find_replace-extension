@@ -14,8 +14,8 @@ class FindReplaceExtension < Radiant::Extension
   end
 
   def activate
-    # tab 'Content' do
-    #   add_item "Find Replace", "/admin/find_replace", :after => "Pages"
-    # end
+    tab 'Content' do
+      add_item "Find/Replace", "/admin/search", :after => "Pages"
+    end
   end
 end
