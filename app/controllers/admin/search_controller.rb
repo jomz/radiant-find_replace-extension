@@ -1,4 +1,8 @@
 class Admin::SearchController < ApplicationController
+  only_allow_access_to :results,
+    :when => [:designer, :admin],
+    :denied_url => { :controller => 'admin/pages', :action => 'index' },
+    :denied_message => 'You must have designer privileges to perform this action.'
   
   def results
     if params[:doReplace]
