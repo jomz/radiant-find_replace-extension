@@ -1,0 +1,71 @@
+- @page_title = 'Search'
+
+.outset
+  %form
+    - if params[:query]
+      %table.index#results{:summary=>"Results", :style => "margin-bottom: 60px"}
+        %thead
+          %tr
+            %th{:style => "width: 2em"}
+              %input{:type => 'checkbox', :id => 'toggler', :onclick => "toggle_cbs()"}
+            %th.identifier Search result
+        %tbody
+          - @page_results.each do |page|
+            %tr
+              %td
+                %input{:type => 'checkbox', :name => "page_#{page.id}"}
+              %td
+                = image_tag 'admin/page.png', :class => "icon", :title => 'Page'
+                = link_to page.path, edit_admin_page_path(page)
+          - @snippet_results.each do |snippet|
+            %tr
+              %td
+                %input{:type => 'checkbox', :name => "snippet_#{snippet.id}"}
+              %td
+                = image_tag 'admin/snippet.png', :class => "icon", :title => 'Snippet'
+                = link_to snippet.name, edit_admin_snippet_path(snippet)
+          - @layout_results.each do |layout|
+            %tr
+              %td
+                %input{:type => 'checkbox', :name => "layout_#{layout.id}"}
+              %td
+                = image_tag 'admin/layout.png', :class => "icon", :title => 'Layout'
+                = link_to layout.name, edit_admin_layout_path(layout)
+          - if @page_results.empty? && @snippet_results.empty? && @layout_results.empty?
+            %tr
+              %td.empty{:colspan => 3}
+                No results for
+                %em
+                  = params[:query]
+                \.
+
+    #actions{:style => "color: #eee"}
+      %ul
+        %li
+          Find:
+          %input{:type => 'text', :name => 'query', :value => params[:query]}
+        %li
+          Replace:
+          %input{:type => 'text', :name => 'replace', :value => params[:replace]}
+        %li
+          %input{:type => 'checkbox', :name => 'regex_mode', :checked => params[:regex_mode] }
+          Use regular expressions
+        %li
+          %input{:type => 'checkbox', :name => 'case_insensitive', :checked => params[:case_insensitive] }
+          Ignore case
+        %li
+          %input{:type => :submit, :class => 'action_button', :value => 'Find all'}
+        - if params[:query]
+          %li
+            = submit_tag 'Replace selected', {:class => 'action_button', :name => 'doReplace', :confirm => "Are you sure you want to replace all instances of '#{params[:query]}' with '#{params[:replace]}' in all of the selected Pages, Snippets and Layouts? This can not be reverted!"}
+            / %input{:type => :submit}
+
+:javascript
+  function toggle_cbs() {
+    if($("toggler").checked){
+      $$('input[type="checkbox"]').slice(1,-1).each(function(e){ e.checked = 1 });
+    }
+    else{
+      $$('input[type="checkbox"]').slice(1,-1).each(function(e){ e.checked = 0 });
+    }
+  }
