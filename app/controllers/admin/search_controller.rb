@@ -12,9 +12,14 @@ class Admin::SearchController < ApplicationController
         srch = Regexp.new(params[:query], params[:case_insensitive])
         
         if class_name == 'page'
-          Page.find(id).parts.each do |page_part|
+          page = Page.find(id)
+          [:slug, :title, :breadcrumb].each do |attr|
+            page.update_attribute(attr, page.send(attr).gsub(srch, params[:replace]))
+          end
+          page.parts.each do |page_part|
             page_part.update_attribute :content, page_part.content.gsub(srch, params[:replace])
           end
+
         else
           to_replace.update_attribute :content, to_replace.content.gsub(srch, params[:replace])
         end
@@ -36,8 +41,10 @@ class Admin::SearchController < ApplicationController
             sqlike = params[:case_insensitive] ? "LIKE" : "LIKE BINARY"
           end
         end
-
-      @page_results = Page.find(:all, :include => [ :parts ], :conditions => ["page_parts.content #{like} ? ", match])
+      
+      pages_with_matching_slug = Page.find(:all, :conditions => ["slug #{like} ?", match])
+      # Is not [page, ...] but [[page, boolean], ...] to mark dangerous matches
+      @page_results = Page.find(:all, :include => [ :parts ], :conditions => ["page_parts.content #{like} ? OR pages.slug #{like} ? OR pages.breadcrumb #{like} ?  OR pages.title #{like} ? ", [match]* 4].flatten).map{|page| [page, pages_with_matching_slug.include?(page)]}
       @snippet_results = Snippet.find(:all, :conditions => ["content #{like} ?", match])
       @layout_results = Layout.find(:all, :conditions => ["content #{like} ?", match])
     end
