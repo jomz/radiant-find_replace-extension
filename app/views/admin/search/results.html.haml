@@ -24,8 +24,16 @@
                 - if slug_matches
                   %span{:title => "This page has a match in it's slug. Consequently, replacing this match will change the URL of this page and all its children!", :style => "color: red; font-weight: bold"} !
               %td
-                = image_tag 'admin/page.png', :class => "icon", :title => 'Page'
-                = link_to page.path, edit_admin_page_path(page)
+                - if page.class_name == "StylesheetPage"
+                  = image_tag 'admin/stylesheet.png', :class => "icon", :title => 'StylesheetPage'
+                  = link_to page.path, edit_admin_style_path(page)
+                - elsif page.class_name == "JavascriptPage"
+                  = image_tag 'admin/javascript.png', :class => "icon", :title => 'JavascriptPage'
+                  = link_to page.path, edit_admin_script_path(page)
+                - else
+                  = image_tag 'admin/page.png', :class => "icon", :title => 'Page'
+                  = link_to page.path, edit_admin_page_path(page)
+                
           - @snippet_results.each do |snippet|
             %tr
               %td
