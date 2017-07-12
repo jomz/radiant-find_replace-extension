@@ -9,17 +9,16 @@ class Admin::SearchController < ApplicationController
       params.select{|k, v| k =~ /(page|snippet|layout)_(\d)/ }.map do |k,v| 
         class_name, id = k.to_s.split('_')
         to_replace = class_name.titlecase.constantize.find(id)
-        srch = Regexp.new(params[:query], params[:case_insensitive])
+        qry = params[:regex_mode] ? params[:query] : Regexp.quote(params[:query])
+        srch = Regexp.new(qry, params[:case_insensitive])
         
         if class_name == 'page'
-          page = Page.find(id)
           [:slug, :title, :breadcrumb].each do |attr|
-            page.update_attribute(attr, page.send(attr).gsub(srch, params[:replace]))
+            to_replace.update_attribute(attr, to_replace.send(attr).gsub(srch, params[:replace]))
           end
-          page.parts.each do |page_part|
+          to_replace.parts.each do |page_part|
             page_part.update_attribute :content, page_part.content.gsub(srch, params[:replace])
           end
-
         else
           to_replace.update_attribute :content, to_replace.content.gsub(srch, params[:replace])
         end
