@@ -80,9 +80,9 @@
 :javascript
   function toggle_cbs() {
     if($("toggler").checked){
-      $$('input[type="checkbox"]').slice(1,-1).each(function(e){ e.checked = 1 });
+      $$('input[type="checkbox"]').slice(1,-2).each(function(e){ e.checked = 1 });
     }
     else{
-      $$('input[type="checkbox"]').slice(1,-1).each(function(e){ e.checked = 0 });
+      $$('input[type="checkbox"]').slice(1,-2).each(function(e){ e.checked = 0 });
     }
   }
