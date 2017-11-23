@@ -71,10 +71,13 @@
           %input{:type => 'checkbox', :name => 'case_insensitive', :checked => params[:case_insensitive] }
           Ignore case
         %li
+          %input{:type => 'checkbox', :name => 'include_field_and_part_names', :checked => params[:include_field_and_part_names] }
+          Also search page field- and part-names
+        %li
           %input{:type => :submit, :class => 'action_button', :value => 'Find all'}
         - if params[:query]
           %li
-            = submit_tag 'Replace selected', {:class => 'action_button', :name => 'doReplace', :confirm => "Are you sure you want to replace all instances of '#{params[:query]}' with '#{params[:replace]}' in all of the selected Pages, Snippets and Layouts? This can not be reverted!"}
+            = submit_tag 'Replace selected', {:class => 'action_button', :name => 'doReplace', :confirm => "Are you sure you want to replace all instances of '#{params[:query]}#{params[:replace] ? '\' with \'' + params[:replace]: ''}' in all of the selected Pages, Snippets and Layouts? This can not be reverted!"}
             / %input{:type => :submit}
 
 :javascript

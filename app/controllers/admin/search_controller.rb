@@ -14,11 +14,17 @@ class Admin::SearchController < ApplicationController
         
         if class_name == 'page'
           [:slug, :title, :breadcrumb].each do |attr|
-            to_replace.update_attribute(attr, to_replace.send(attr).gsub(srch, params[:replace]))
+            to_replace.send("#{attr}=", to_replace.send(attr).gsub(srch, params[:replace]))
           end
           to_replace.parts.each do |page_part|
-            page_part.update_attribute :content, page_part.content.gsub(srch, params[:replace])
+            page_part.content = page_part.content.gsub(srch, params[:replace])
+            page_part.name = page_part.name.gsub(srch, params[:replace]) if params[:include_field_and_part_names]
           end
+          to_replace.fields.each do |field|
+            field.content = field.content.gsub(srch, params[:replace])
+            field.name = field.name.gsub(srch, params[:replace]) if params[:include_field_and_part_names]
+          end
+          page.save
         else
           to_replace.update_attribute :content, to_replace.content.gsub(srch, params[:replace])
         end
@@ -42,8 +48,14 @@ class Admin::SearchController < ApplicationController
         end
       
       pages_with_matching_slug = Page.find(:all, :conditions => ["slug #{like} ?", match])
+      
+      includes = [ :parts, :fields ]
+      cols = %w(page_parts.content pages.slug pages.breadcrumb pages.title page_fields.content)
+      cols+= %w(page_fields.name page_parts.name) if params[:include_field_and_part_names]
       # Is not [page, ...] but [[page, boolean], ...] to mark dangerous matches
-      @page_results = Page.find(:all, :include => [ :parts ], :conditions => ["page_parts.content #{like} ? OR pages.slug #{like} ? OR pages.breadcrumb #{like} ?  OR pages.title #{like} ? ", [match]* 4].flatten).map{|page| [page, pages_with_matching_slug.include?(page)]}
+      conditions = cols.map{|c| "#{c} #{like} ?"}.join(' OR ')
+      @page_results = Page.find(:all, :include => includes, :conditions => [conditions, [match]* cols.size].flatten).map{|page| [page, pages_with_matching_slug.include?(page)]}
+      
       @snippet_results = Snippet.find(:all, :conditions => ["content #{like} ?", match])
       @layout_results = Layout.find(:all, :conditions => ["content #{like} ?", match])
     end
