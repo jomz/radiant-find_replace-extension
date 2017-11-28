@@ -1,21 +1,21 @@
 - @page_title = 'Search'
-
+- include_stylesheet 'admin/find_replace'
 .outset
-  %form
+  %form#find_replace_form
     - if params[:query]
-      %table.index#results{:summary=>"Results", :style => "margin-bottom: 60px"}
+      %table.index#results{:summary=>"Results"}
         %thead
           %tr
-            %th{:style => "width: 2.5em"}
+            %th
               %input{:type => 'checkbox', :id => 'toggler', :onclick => "toggle_cbs()"}
             %th.identifier Search result
         %tbody
           - if @page_results.select{|page, bool| bool}.any?
-            %tr
+            %tr.warning
               %td{:colspan => 2}
-                %em{:style => "font-weight: bold"} Warning:
+                %em Warning:
                 pages marked with an 
-                %span{:style => "color: red; font-weight: bold"} !
+                %span !
                 have a match in their slug. Replacing these matches will change the URL of the page, and consequently those of all children it may have (irrespective of whether they themselves match the search term or not).
           - @page_results.each do |page, slug_matches|
             %tr
@@ -56,36 +56,76 @@
                   = params[:query]
                 \.
 
-    #actions{:style => "color: #eee"}
-      %ul
-        %li
-          Find:
-          %input{:type => 'text', :name => 'query', :value => params[:query]}
-        %li
-          Replace:
-          %input{:type => 'text', :name => 'replace', :value => params[:replace]}
-        %li
-          %input{:type => 'checkbox', :name => 'regex_mode', :checked => params[:regex_mode] }
-          Use regular expressions
-        %li
-          %input{:type => 'checkbox', :name => 'case_insensitive', :checked => params[:case_insensitive] }
-          Ignore case
-        %li
-          %input{:type => 'checkbox', :name => 'include_field_and_part_names', :checked => params[:include_field_and_part_names] }
-          Also search page field- and part-names
-        %li
-          %input{:type => :submit, :class => 'action_button', :value => 'Find all'}
-        - if params[:query]
+    %footer
+      .left
+        %ul
+          %li.find
+            %label
+              Find: 
+              %input{:type => 'text', :name => 'query', :value => params[:query]}
+          %li.replace
+            %label
+              Replace: 
+              %input{:type => 'text', :name => 'replace', :value => params[:replace]}
           %li
-            = submit_tag 'Replace selected', {:class => 'action_button', :name => 'doReplace', :confirm => "Are you sure you want to replace all instances of '#{params[:query]}#{params[:replace] ? '\' with \'' + params[:replace]: ''}' in all of the selected Pages, Snippets and Layouts? This can not be reverted!"}
-            / %input{:type => :submit}
+            %label
+              %input{:type => 'checkbox', :name => 'regex_mode', :checked => params[:regex_mode] }
+              Use 
+              %a{:href => "http://rubular.com/"} regular expressions
+                
+            %label
+              %input{:type => 'checkbox', :name => 'case_insensitive', :checked => params[:case_insensitive] }
+              Ignore case
+          %li
+            %input{:type => :submit, :class => 'action_button', :value => 'Find all'}
+            - if params[:query]
+              = submit_tag 'Replace selected', {:class => 'action_button', :name => 'doReplace', :confirm => "Are you sure you want to replace all instances of '#{params[:query]}#{params[:replace] ? '\' with \'' + params[:replace]: ''}' in all of the selected Pages, Snippets and Layouts? This can not be reverted!"}
+      .right
+        %ul
+          %li
+            Page
+            %label
+              %input{:type => 'checkbox', :name => 'include_page_title_fields', :checked => params[:include_page_title_fields] || !params[:query] }
+              title, slug and breadcrumb
+            %br
+            Page part
+            %label
+              %input{:type => 'checkbox', :name => 'include_page_part_names', :checked => params[:include_page_part_names] }
+              names
+            %label
+              %input{:type => 'checkbox', :name => 'include_page_part_contents', :checked => params[:include_page_part_contents] || !params[:query] }
+              contents
+            %br
+            Page field
+            %label
+              %input{:type => 'checkbox', :name => 'include_page_field_names', :checked => params[:include_page_field_names] }
+              names
+            %label
+              %input{:type => 'checkbox', :name => 'include_page_field_contents', :checked => params[:include_page_field_contents] || !params[:query] }
+              contents
+            %br
+            Layout
+            %label
+              %input{:type => 'checkbox', :name => 'include_layout_names', :checked => params[:include_layout_names] }
+              names
+            %label
+              %input{:type => 'checkbox', :name => 'include_layout_contents', :checked => params[:include_layout_contents] || !params[:query] }
+              contents
+            %br
+            Snippet
+            %label
+              %input{:type => 'checkbox', :name => 'include_snippet_names', :checked => params[:include_snippet_names] }
+              names
+            %label
+              %input{:type => 'checkbox', :name => 'include_snippet_contents', :checked => params[:include_snippet_contents] || !params[:query] }
+              contents
 
 :javascript
   function toggle_cbs() {
     if($("toggler").checked){
-      $$('input[type="checkbox"]').slice(1,-2).each(function(e){ e.checked = 1 });
+      $$('td input[type="checkbox"]').each(function(e){ e.checked = 1 });
     }
     else{
-      $$('input[type="checkbox"]').slice(1,-2).each(function(e){ e.checked = 0 });
+      $$('td input[type="checkbox"]').each(function(e){ e.checked = 0 });
     }
   }

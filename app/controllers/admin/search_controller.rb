@@ -13,20 +13,44 @@ class Admin::SearchController < ApplicationController
         srch = Regexp.new(qry, params[:case_insensitive])
         
         if class_name == 'page'
-          [:slug, :title, :breadcrumb].each do |attr|
-            to_replace.send("#{attr}=", to_replace.send(attr).gsub(srch, params[:replace]))
+          if params[:include_page_title_fields]
+            [:slug, :title, :breadcrumb].each do |attr|
+              to_replace.send("#{attr}=", to_replace.send(attr).gsub(srch, params[:replace]))
+            end
           end
           to_replace.parts.each do |page_part|
-            page_part.content = page_part.content.gsub(srch, params[:replace])
-            page_part.name = page_part.name.gsub(srch, params[:replace]) if params[:include_field_and_part_names]
+            if params[:include_page_part_contents]
+              page_part.content = page_part.content.gsub(srch, params[:replace])
+            end
+            if params[:include_page_part_names]
+              page_part.name = page_part.name.gsub(srch, params[:replace])
+            end
           end
           to_replace.fields.each do |field|
-            field.content = field.content.gsub(srch, params[:replace])
-            field.name = field.name.gsub(srch, params[:replace]) if params[:include_field_and_part_names]
+            if params[:include_page_field_contents]
+              field.content = field.content.gsub(srch, params[:replace])
+            end
+            if params[:include_page_field_names]
+              field.name = field.name.gsub(srch, params[:replace])
+            end
           end
-          page.save
+          to_replace.save
+        elsif class_name == 'snippet'
+          if params[:include_snippet_contents]
+            to_replace.content = to_replace.content.gsub(srch, params[:replace])
+          end
+          if params[:include_snippet_names]
+            to_replace.name = to_replace.name.gsub(srch, params[:replace])
+          end
+          to_replace.save
         else
-          to_replace.update_attribute :content, to_replace.content.gsub(srch, params[:replace])
+          if params[:include_layout_contents]
+            to_replace.content = to_replace.content.gsub(srch, params[:replace])
+          end
+          if params[:include_layout_names]
+            to_replace.name = to_replace.name.gsub(srch, params[:replace])
+          end
+          to_replace.save
         end
       end
     end
@@ -50,14 +74,38 @@ class Admin::SearchController < ApplicationController
       pages_with_matching_slug = Page.find(:all, :conditions => ["slug #{like} ?", match])
       
       includes = [ :parts, :fields ]
-      cols = %w(page_parts.content pages.slug pages.breadcrumb pages.title page_fields.content)
-      cols+= %w(page_fields.name page_parts.name) if params[:include_field_and_part_names]
+      cols = []
+      cols += %w(pages.slug pages.breadcrumb pages.title) if params[:include_page_title_fields]
+      cols << "page_parts.content" if params[:include_page_part_contents]
+      cols << "page_parts.name" if params[:include_page_part_names]
+      cols << "page_fields.content" if params[:include_page_field_contents]
+      cols << "page_fields.name" if params[:include_page_field_names]
+
       # Is not [page, ...] but [[page, boolean], ...] to mark dangerous matches
       conditions = cols.map{|c| "#{c} #{like} ?"}.join(' OR ')
-      @page_results = Page.find(:all, :include => includes, :conditions => [conditions, [match]* cols.size].flatten).map{|page| [page, pages_with_matching_slug.include?(page)]}
+      @page_results = if cols.size > 0
+        Page.find(:all, :include => includes, :conditions => [conditions, [match]* cols.size].flatten).map{|page| [page, pages_with_matching_slug.include?(page)]}
+      else
+        []
+      end
       
-      @snippet_results = Snippet.find(:all, :conditions => ["content #{like} ?", match])
-      @layout_results = Layout.find(:all, :conditions => ["content #{like} ?", match])
+      snippet_cols = []
+      snippet_cols << "content" if params[:include_snippet_contents]
+      snippet_cols << "name" if params[:include_snippet_names]
+      @snippet_results = if snippet_cols.size > 0
+        Snippet.find(:all, :conditions => [snippet_cols.map{|c| "#{c} #{like} ?"}.join(' OR '), [match]*snippet_cols.size])
+      else
+        []
+      end
+      
+      layout_cols = []
+      layout_cols << "content" if params[:include_layout_contents]
+      layout_cols << "name" if params[:include_layout_names]
+      @layout_results = if layout_cols.size > 0
+        Layout.find(:all, :conditions => [layout_cols.map{|c| "#{c} #{like} ?"}.join(' OR '), [match]*layout_cols.size])
+      else
+        []
+      end
     end
     
   end
