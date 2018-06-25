@@ -3,15 +3,15 @@ class Admin::SearchController < ApplicationController
     :when => [:designer, :admin],
     :denied_url => { :controller => 'admin/pages', :action => 'index' },
     :denied_message => 'You must have designer privileges to perform this action.'
-  
+
   def results
     if params[:doReplace]
-      params.select{|k, v| k =~ /(page|snippet|layout)_(\d)/ }.map do |k,v| 
+      params.select{|k, v| k =~ /(page|snippet|layout)_(\d)/ }.map do |k,v|
         class_name, id = k.to_s.split('_')
         to_replace = class_name.titlecase.constantize.find(id)
         qry = params[:regex_mode] ? params[:query] : Regexp.quote(params[:query])
         srch = Regexp.new(qry, params[:case_insensitive])
-        
+
         if class_name == 'page'
           if params[:include_page_title_fields]
             [:slug, :title, :breadcrumb].each do |attr|
@@ -54,7 +54,7 @@ class Admin::SearchController < ApplicationController
         end
       end
     end
-    
+
     if query = params[:query]
       like = case Page.connection.adapter_name.downcase
         when 'postgresql'
@@ -70,9 +70,9 @@ class Admin::SearchController < ApplicationController
             sqlike = params[:case_insensitive] ? "LIKE" : "LIKE BINARY"
           end
         end
-      
+
       pages_with_matching_slug = Page.find(:all, :conditions => ["slug #{like} ?", match])
-      
+
       includes = [ :parts, :fields ]
       cols = []
       cols += %w(pages.slug pages.breadcrumb pages.title) if params[:include_page_title_fields]
@@ -88,30 +88,30 @@ class Admin::SearchController < ApplicationController
       else
         []
       end
-      
+
       snippet_cols = []
       snippet_cols << "content" if params[:include_snippet_contents]
       snippet_cols << "name" if params[:include_snippet_names]
       @snippet_results = if snippet_cols.size > 0
-        Snippet.find(:all, :conditions => [snippet_cols.map{|c| "#{c} #{like} ?"}.join(' OR '), [match]*snippet_cols.size])
+        Snippet.find(:all, :conditions => [snippet_cols.map{|c| "#{c} #{like} ?"}.join(' OR '), [match]*snippet_cols.size].flatten)
       else
         []
       end
-      
+
       layout_cols = []
       layout_cols << "content" if params[:include_layout_contents]
       layout_cols << "name" if params[:include_layout_names]
       @layout_results = if layout_cols.size > 0
-        Layout.find(:all, :conditions => [layout_cols.map{|c| "#{c} #{like} ?"}.join(' OR '), [match]*layout_cols.size])
+        Layout.find(:all, :conditions => [layout_cols.map{|c| "#{c} #{like} ?"}.join(' OR '), [match]*layout_cols.size].flatten)
       else
         []
       end
     end
-    
+
   end
-    
+
   private
-  
+
   def match
     qry = params[:regex_mode] ? params[:query] : "%#{params[:query]}%"
     params[:case_insensitive] ? qry.downcase : qry
